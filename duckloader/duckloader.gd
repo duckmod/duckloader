@@ -49,14 +49,14 @@ func _load_mods() -> void :
 			print("[DuckLoader] Skipping disabled mod '%s'" % entry_name)
 			continue
 
-		var full_path: = _mods_dir + "/" + entry_name
+		var full_path: = _mods_dir.path_join(entry_name)
 		var descriptor: Dictionary
 
 		if DirAccess.dir_exists_absolute(full_path):
-			descriptor = _build_descriptor(full_path + "/mod.gd", full_path + "/mod.json", entry_name)
+			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name)
 		elif entry_name.ends_with(".gd"):
 			var base_name: = entry_name.get_basename()
-			descriptor = _build_descriptor(full_path, _mods_dir + "/" + base_name + ".json", base_name)
+			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name)
 		else:
 			continue
 
