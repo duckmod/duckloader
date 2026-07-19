@@ -1,0 +1,7 @@
+*.so
+*.dll
+*.exe
+*.pck
+*.x86_64
+LICENSE.txt
+mods/
