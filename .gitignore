@@ -5,3 +5,4 @@
 *.x86_64
 LICENSE.txt
 mods/
+*proton.cache*
