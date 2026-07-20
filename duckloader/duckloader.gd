@@ -1,5 +1,7 @@
 extends Node
 
+const loader_version := "0.0.1"
+
 var _mods_dir: = ""
 
 var _mods: Array[Node] = []
@@ -7,8 +9,9 @@ var _mod_registry: = {}
 var _mod_info: = {}
 var _close_fired: = false
 
-
 func _ready() -> void :
+	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
+	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version" )")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_mods_dir = OS.get_executable_path().get_base_dir() + "/mods"
 	_hook_save_events()
