@@ -13,9 +13,9 @@ func _ready() -> void :
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
 	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version" )")
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_mods_dir = OS.get_executable_path().get_base_dir() + "/mods"
+	_mods_dir = OS.get_executable_path().get_base_dir().path_join("mods")
 	_hook_save_events()
-	_load_mods()
+	_load_gd_mods()
 
 
 func _hook_save_events() -> void :
@@ -25,7 +25,7 @@ func _hook_save_events() -> void :
 		save_manager.game_loaded.connect(_on_game_loaded)
 
 
-func _load_mods() -> void :
+func _load_gd_mods() -> void :
 	var dir: = DirAccess.open(_mods_dir)
 
 	if not dir:
@@ -67,7 +67,7 @@ func _load_mods() -> void :
 			descriptors.append(descriptor)
 
 	for order in _resolve_load_order(descriptors):
-		_instantiate_mod(order)
+		_instantiate_gd_mod(order)
 
 	print("[DuckLoader] Loaded %d mod(s)" % _mods.size())
 
@@ -160,7 +160,7 @@ func _resolve_load_order(descriptors: Array) -> Array:
 	return result
 
 
-func _instantiate_mod(descriptor: Dictionary) -> void :
+func _instantiate_gd_mod(descriptor: Dictionary) -> void :
 	var script: = load(descriptor.script_path)
 
 	if not script is GDScript:
@@ -247,7 +247,7 @@ func _fire_game_close() -> void :
 		return
 
 	_close_fired = true
-
+ 
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_on_game_close"):
 			mod._on_game_close()
