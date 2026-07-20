@@ -67,6 +67,7 @@ func _build_ui() -> void :
 	_background = Control.new()
 	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_background.mouse_filter = Control.MOUSE_FILTER_STOP
+	_background.theme = load("res://assets/main_menu.tres")
 	add_child(_background)
 
 	var dim: = ColorRect.new()
@@ -83,7 +84,7 @@ func _build_ui() -> void :
 	_background.add_child(margin)
 
 	var root_vbox: = VBoxContainer.new()
-	root_vbox.add_theme_constant_override("separation", 12)
+	root_vbox.add_theme_constant_override("separation", 16)
 	margin.add_child(root_vbox)
 
 	var header: = HBoxContainer.new()
@@ -91,7 +92,8 @@ func _build_ui() -> void :
 
 	var title: = Label.new()
 	title.text = "Mod Settings"
-	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_color_override("font_color", Color("#f7ba14"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
@@ -102,26 +104,31 @@ func _build_ui() -> void :
 
 	var panes: = HBoxContainer.new()
 	panes.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panes.add_theme_constant_override("separation", 16)
+	panes.add_theme_constant_override("separation", 24)
 	root_vbox.add_child(panes)
 
 	var left_scroll: = ScrollContainer.new()
-	left_scroll.custom_minimum_size = Vector2(260, 0)
+	left_scroll.custom_minimum_size = Vector2(400, 0)
 	left_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	left_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	panes.add_child(left_scroll)
 
 	_mod_list_box = VBoxContainer.new()
 	_mod_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_mod_list_box.add_theme_constant_override("separation", 4)
 	left_scroll.add_child(_mod_list_box)
 
 	var right_scroll: = ScrollContainer.new()
 	right_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	right_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	panes.add_child(right_scroll)
 
 	_detail_box = VBoxContainer.new()
 	_detail_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_detail_box.add_theme_constant_override("separation", 10)
+	_detail_box.add_theme_constant_override("separation", 16)
 	right_scroll.add_child(_detail_box)
 
 
@@ -149,6 +156,10 @@ func _populate_mod_list() -> void :
 		row.text = "  " + str(meta.get("name", mod_id))
 		row.icon = _load_icon(mod_id)
 		row.pressed.connect(_on_mod_selected.bind(mod_id))
+		row.add_theme_color_override("font_color", Color("#ffffff"))
+		row.add_theme_color_override("font_hover_color", Color("#ffffff"))
+		row.add_theme_color_override("font_pressed_color", Color("#ffffff"))
+		row.add_theme_color_override("font_focus_color", Color("#ffffff"))
 		_mod_list_box.add_child(row)
 		_mod_buttons[mod_id] = row
 
@@ -179,6 +190,7 @@ func _on_mod_selected(mod_id: String) -> void :
 	icon_rect.texture = _load_icon(mod_id)
 	icon_rect.custom_minimum_size = Vector2(64, 64)
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	header.add_child(icon_rect)
 
 	var name_box: = VBoxContainer.new()
@@ -199,6 +211,14 @@ func _on_mod_selected(mod_id: String) -> void :
 	save_btn.pressed.connect(_save_pending_changes)
 	header.add_child(save_btn)
 
+	var desc_text: String = str(meta.get("description", ""))
+	if desc_text != "":
+		var desc_label := Label.new()
+		desc_label.text = desc_text
+		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		desc_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+		name_box.add_child(desc_label)
+
 	_detail_box.add_child(HSeparator.new())
 
 	var schema: = DuckLoader.get_mod_settings_schema(mod_id)
@@ -215,11 +235,6 @@ func _on_mod_selected(mod_id: String) -> void :
 		_detail_box.add_child(_build_setting_control(mod_id, entry))
 
 	_detail_box.add_child(HSeparator.new())
-
-	var desc_label: = Label.new()
-	desc_label.text = str(meta.get("description", ""))
-	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_detail_box.add_child(desc_label)
 
 
 func _get_current_value(mod_id: String, entry: Dictionary) -> Variant:
@@ -257,7 +272,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		return action_btn
 
 	var wrapper: = VBoxContainer.new()
-	wrapper.add_theme_constant_override("separation", 2)
+	wrapper.add_theme_constant_override("separation", 6)
 
 	var label: = Label.new()
 	label.text = entry.name
@@ -290,6 +305,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			var value_label: = Label.new()
 			value_label.custom_minimum_size = Vector2(50, 0)
 			value_label.text = str(current)
+			value_label.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			slider.value_changed.connect(func(v):
 				var staged = roundi(v) if is_int else v
 				_pending_values[entry.id] = staged
@@ -306,6 +322,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			var line: = LineEdit.new()
 			line.text = str(current)
 			line.text_changed.connect(func(t): _pending_values[entry.id] = t)
+			line.custom_minimum_size.y = 32
 			wrapper.add_child(line)
 			_control_refresh[entry.id] = func(value): line.text = str(value)
 
@@ -314,6 +331,8 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			line.text = current
 			line.max_length = entry.max_len
 			line.text_changed.connect(func(t): _pending_values[entry.id] = t)
+			line.custom_minimum_size.y = 32
+			line.add_theme_constant_override("margin_bottom", 3)
 			wrapper.add_child(line)
 			_control_refresh[entry.id] = func(value): line.text = value
 
@@ -337,6 +356,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 					select_index = i
 
 			option.select(select_index)
+			option.custom_minimum_size.y = 32
 			option.item_selected.connect(func(index):
 				_pending_values[entry.id] = option.get_item_metadata(index)
 			)
@@ -350,7 +370,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		"color_picker":
 			var picker: = ColorPickerButton.new()
 			picker.color = current
-			picker.custom_minimum_size = Vector2(60, 30)
+			picker.custom_minimum_size = Vector2(80, 32)
 			picker.color_changed.connect(func(c): _pending_values[entry.id] = c)
 			wrapper.add_child(picker)
 			_control_refresh[entry.id] = func(value): picker.color = Color(value)
@@ -362,6 +382,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 				key_btn.text = "Press a key... (Esc to cancel)"
 				_keybind_listener = {"mod_id": mod_id, "setting_id": entry.id, "button": key_btn}
 			)
+			key_btn.custom_minimum_size.y = 32
 			wrapper.add_child(key_btn)
 			_control_refresh[entry.id] = func(value): key_btn.text = _key_display_text(value)
 

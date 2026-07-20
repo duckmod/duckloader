@@ -18,7 +18,7 @@ var _default_icon_texture: Texture2D = null
 
 func _ready() -> void :
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
-	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version + " )")
+	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloader " + loader_version + ")")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_mods_dir = OS.get_executable_path().get_base_dir().path_join("mods")
 	_hook_save_events()
