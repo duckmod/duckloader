@@ -6,4 +6,6 @@
 *.gd.uid
 LICENSE.txt
 mods/
+/decompiled/
+.idea
 *proton.cache*
