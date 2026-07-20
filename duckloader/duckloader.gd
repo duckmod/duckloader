@@ -233,6 +233,11 @@ func log_message(message: String) -> void :
 	if console and console.has_method("log_line"):
 		console.log_line(message)
 
+func add_command(name: String, function: Callable, desc="") -> void:
+	var console: = get_node_or_null("/root/DebugConsole")
+
+	if console and console.has_method("add_command"):
+		console.add_command(name, function, desc)
 
 func _fire_game_close() -> void :
 	if _close_fired:

@@ -96,28 +96,27 @@ func _build_ui() -> void :
 
 
 func _register_commands() -> void :
-	_commands["help"] = _cmd_help
-	_commands["clear"] = _cmd_clear
-	_commands["list"] = _cmd_list
-	_commands["spawn"] = _cmd_spawn
-	_commands["spamn"] = _cmd_spawn
-	_commands["speed"] = _cmd_speed
-	_commands["money"] = _cmd_money
-	_commands["setmoney"] = _cmd_setmoney
-	_commands["phase"] = _cmd_phase
-	_commands["next_phase"] = _cmd_next_phase
-	_commands["unlock_all"] = _cmd_unlock_all
-	_commands["noclip"] = _cmd_noclip
-	_commands["tp"] = _cmd_teleport
-	_commands["fov"] = _cmd_fov
-	_commands["clear_objects"] = _cmd_clear_objects
-	_commands["pool_stats"] = _cmd_pool_stats
-	_commands["save"] = _cmd_save
-	_commands["load"] = _cmd_load
-	_commands["quit"] = _cmd_quit
-	_commands["debug_hud"] = _cmd_debug_hud
-	_commands["upgrade"] = _cmd_upgrade
-	_commands["mods"] = _cmd_mods
+	_commands["help"] = {"func": _cmd_help, "desc": ""}
+	_commands["clear"] = {"func": _cmd_clear, "desc": ""}
+	_commands["list"] = {"func": _cmd_list, "desc": ""}
+	_commands["spawn"] = {"func": _cmd_spawn, "desc": "<name> [count] [distance=<n>] [property=value ...] [/n]name: an object pool id (see 'list') or a scene file in res://scenes/ [/n]distance: how far from the camera to spawn, along where you're looking, pitch included (default %.1f) [/n]value can be a number, true/false, text, or comma-separated numbers for a Vector2/Vector3/Color [/n]example: spawn duck 10 distance=5 value=5 scale=2,2,2" % DEFAULT_SPAWN_DISTANCE}
+	_commands["speed"] = {"func": _cmd_speed, "desc": "<multiplier> [/n]changes Engine.time_scale, e.g. 'speed 0.5' for slow motion, 'speed 1' to reset"}
+	_commands["money"] = {"func": _cmd_money, "desc": "<amount> : add to current money (can be negative)"}
+	_commands["setmoney"] = {"func": _cmd_setmoney, "desc": "<amount> : set money to an exact value"}
+	_commands["phase"] = {"func": _cmd_phase, "desc": "<0-5> : jump straight to a game phase"}
+	_commands["next_phase"] = {"func": _cmd_next_phase, "desc": ": advance to the next phase"}
+	_commands["unlock_all"] = {"func": _cmd_unlock_all, "desc": ": unlock every milestone/upgrade"}
+	_commands["noclip"] = {"func": _cmd_noclip, "desc": ": toggle free-fly, no-collision movement (scroll wheel changes fly speed)"}
+	_commands["tp"] = {"func": _cmd_teleport, "desc": "<x,y,z> : teleport the player"}
+	_commands["fov"] = {"func": _cmd_fov, "desc": "<degrees> : force a fixed camera FOV"}
+	_commands["clear_objects"] = {"func": _cmd_clear_objects, "desc": ": recycle every spawned pooled object"}
+	_commands["pool_stats"] = {"func": _cmd_pool_stats, "desc": ": show active/available counts per pool"}
+	_commands["save"] = {"func": _cmd_save, "desc": ": manual save"}
+	_commands["load"] = {"func": _cmd_load, "desc": ": manual load"}
+	_commands["quit"] = {"func": _cmd_quit, "desc": ": exit the game"}
+	_commands["debug_hud"] = {"func": _cmd_debug_hud, "desc": ": toggle an on-screen overlay with position, speed, phase, fps..."}
+	_commands["upgrade"] = {"func": _cmd_upgrade, "desc": "<name> <level> : set an upgrade's level directly (e.g. 'upgrade sprint 3')"}
+	_commands["mods"] = {"func": _cmd_mods, "desc": ": list every mod loaded by DuckLoader, with its metadata"}
 
 
 func _input(event: InputEvent) -> void :
@@ -240,6 +239,12 @@ func close() -> void :
 func log_line(text: String) -> void :
 	_output.append_text(text + "\n")
 
+func add_command(name: String, function: Callable, desc: String = "") -> void:
+	if not name.is_empty() and function.is_valid():
+		_commands[name] = {
+			"func": function,
+			"desc": desc
+		}
 
 func _on_input_line_gui_input(event: InputEvent) -> void :
 	if not (event is InputEventKey and event.pressed):
@@ -292,36 +297,21 @@ func _execute(line: String) -> void :
 		log_line("[color=red]Unknown command: %s[/color]" % command_name)
 		return
 
-	_commands[command_name].call(args)
+	_commands[command_name]["func"].call(args)
 
 
-func _cmd_help(_args: PackedStringArray) -> void :
-	log_line("[b]Commands:[/b]")
-	log_line("  help")
-	log_line("  clear")
-	log_line("  list")
-	log_line("  spawn <name> [count] [distance=<n>] [property=value ...]")
-	log_line("    name: an object pool id (see 'list') or a scene file in res://scenes/")
-	log_line("    distance: how far from the camera to spawn, along where you're looking, pitch included (default %.1f)" % DEFAULT_SPAWN_DISTANCE)
-	log_line("    value can be a number, true/false, text, or comma-separated numbers for a Vector2/Vector3/Color")
-	log_line("    example: spawn duck 10 distance=5 value=5 scale=2,2,2")
-	log_line("  speed <multiplier>")
-	log_line("    changes Engine.time_scale, e.g. 'speed 0.5' for slow motion, 'speed 1' to reset")
-	log_line("  money <amount> : add to current money (can be negative)")
-	log_line("  setmoney <amount> : set money to an exact value")
-	log_line("  phase <0-5> : jump straight to a game phase")
-	log_line("  next_phase : advance to the next phase")
-	log_line("  unlock_all : unlock every milestone/upgrade")
-	log_line("  noclip : toggle free-fly, no-collision movement (scroll wheel changes fly speed)")
-	log_line("  tp <x,y,z> : teleport the player")
-	log_line("  fov <degrees> : force a fixed camera FOV")
-	log_line("  clear_objects : recycle every spawned pooled object")
-	log_line("  pool_stats : show active/available counts per pool")
-	log_line("  save / load : manual save or load")
-	log_line("  quit : exit the game")
-	log_line("  debug_hud : toggle an on-screen overlay with position, speed, phase, fps...")
-	log_line("  upgrade <name> <level> : set an upgrade's level directly (e.g. 'upgrade sprint 3')")
-	log_line("  mods : list every mod loaded by DuckLoader, with its metadata")
+func _cmd_help(_args: PackedStringArray) -> void:
+	for command_name in _commands:
+		var desc: String = _commands[command_name].get("desc", "")
+		
+		if not desc.is_empty():
+			var lines: PackedStringArray = desc.split("[/n]")
+			log_line("  " + command_name + " " + lines[0])
+			
+			for i in range(1, lines.size()):
+				log_line("     " + lines[i])
+		else:
+			log_line("  " + command_name)
 
 
 func _cmd_clear(_args: PackedStringArray) -> void :
