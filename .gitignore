@@ -9,3 +9,4 @@ mods/
 /decompiled/
 .idea
 *proton.cache*
+project.godot
