@@ -1,12 +1,8 @@
 extends Node
 
-<<<<<<< Updated upstream
-var _mods_dir: = ""
-=======
 const loader_version := "0.0.1"
 
 var _mods_dir:= ""
->>>>>>> Stashed changes
 
 var _mods: Array[Node] = []
 var _mod_registry:= {}
@@ -56,6 +52,7 @@ func _load_gd_mods() -> void:
 			continue
 
 		var full_path:= _mods_dir.path_join(entry_name)
+
 		var descriptor: Dictionary
 
 		if entry_name.ends_with(".pck"):
@@ -79,7 +76,7 @@ func _load_gd_mods() -> void:
 				descriptor = _build_descriptor(entry_path, json_path, base_name)
 
 		if DirAccess.dir_exists_absolute(full_path):
-			descriptor = _build_descriptor(full_path + "/mod.gd", full_path + "/mod.json", entry_name)
+			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name)
 		elif entry_name.ends_with(".gd"):
 			var base_name:= entry_name.get_basename()
 			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name)
