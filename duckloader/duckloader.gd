@@ -1,29 +1,35 @@
 extends Node
 
+<<<<<<< Updated upstream
 var _mods_dir: = ""
+=======
+const loader_version := "0.0.1"
+
+var _mods_dir:= ""
+>>>>>>> Stashed changes
 
 var _mods: Array[Node] = []
-var _mod_registry: = {}
-var _mod_info: = {}
-var _close_fired: = false
+var _mod_registry:= {}
+var _mod_info:= {}
+var _close_fired:= false
 
-
-func _ready() -> void :
+func _ready() -> void:
+	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
+	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version + " )")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_mods_dir = OS.get_executable_path().get_base_dir() + "/mods"
 	_hook_save_events()
 	_load_mods()
 
 
-func _hook_save_events() -> void :
-	var save_manager: = get_node_or_null("/root/SaveManager")
+func _hook_save_events() -> void:
+	var save_manager:= get_node_or_null("/root/SaveManager")
 
 	if save_manager and save_manager.has_signal("game_loaded"):
 		save_manager.game_loaded.connect(_on_game_loaded)
 
-
-func _load_mods() -> void :
-	var dir: = DirAccess.open(_mods_dir)
+func _load_gd_mods() -> void:
+	var dir:= DirAccess.open(_mods_dir)
 
 	if not dir:
 		print("[DuckLoader] No mods folder found at %s" % _mods_dir)
@@ -31,7 +37,7 @@ func _load_mods() -> void :
 
 	var entry_names: Array[String] = []
 	dir.list_dir_begin()
-	var entry: = dir.get_next()
+	var entry:= dir.get_next()
 
 	while entry != "":
 		if not entry.begins_with("."):
@@ -42,21 +48,41 @@ func _load_mods() -> void :
 	dir.list_dir_end()
 	entry_names.sort()
 
-	var descriptors: = []
+	var descriptors:= []
 
 	for entry_name in entry_names:
 		if entry_name.begins_with("_"):
 			print("[DuckLoader] Skipping disabled mod '%s'" % entry_name)
 			continue
 
-		var full_path: = _mods_dir + "/" + entry_name
+		var full_path:= _mods_dir.path_join(entry_name)
 		var descriptor: Dictionary
+
+		if entry_name.ends_with(".pck"):
+			print(_mods_dir.path_join(entry_name))
+			var success = ProjectSettings.load_resource_pack(_mods_dir.path_join(entry_name))
+			print(success)
+
+			if !success:
+				# TODO: Make a gui for when asome mod couldnt load
+				# or when a error occurs after load
+				# like what forge does in minecraft.
+				printerr("[DuckLoader] Mod pck %s couldn't be loaded!")
+				continue
+
+			if success:
+				# For now the descriptor loading is not available bc the mod.json is inside the mod
+				var base_name:= entry_name.get_basename()
+
+				var json_path := "res://mod".path_join(base_name).path_join(base_name) + ".json"
+				var entry_path := "res://mod".path_join(base_name).path_join(base_name)+ ".gd"
+				descriptor = _build_descriptor(entry_path, json_path, base_name)
 
 		if DirAccess.dir_exists_absolute(full_path):
 			descriptor = _build_descriptor(full_path + "/mod.gd", full_path + "/mod.json", entry_name)
 		elif entry_name.ends_with(".gd"):
-			var base_name: = entry_name.get_basename()
-			descriptor = _build_descriptor(full_path, _mods_dir + "/" + base_name + ".json", base_name)
+			var base_name:= entry_name.get_basename()
+			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name)
 		else:
 			continue
 
@@ -70,10 +96,11 @@ func _load_mods() -> void :
 
 
 func _build_descriptor(script_path: String, meta_path: String, fallback_name: String) -> Dictionary:
-	if not FileAccess.file_exists(script_path):
+
+	if not FileAccess.file_exists(script_path) and !ResourceLoader.exists(script_path):
 		return {}
 
-	var meta: = _read_metadata(meta_path, fallback_name)
+	var meta:= _read_metadata(meta_path, fallback_name)
 
 	return {
 		"id": meta.id,
@@ -85,7 +112,7 @@ func _build_descriptor(script_path: String, meta_path: String, fallback_name: St
 
 
 func _read_metadata(meta_path: String, fallback_name: String) -> Dictionary:
-	var meta: = {
+	var meta:= {
 		"id": fallback_name,
 		"name": fallback_name,
 		"version": "unknown",
@@ -98,7 +125,7 @@ func _read_metadata(meta_path: String, fallback_name: String) -> Dictionary:
 	if not FileAccess.file_exists(meta_path):
 		return meta
 
-	var text: = FileAccess.get_file_as_string(meta_path)
+	var text:= FileAccess.get_file_as_string(meta_path)
 	var parsed = JSON.parse_string(text)
 
 	if typeof(parsed) != TYPE_DICTIONARY:
@@ -113,7 +140,7 @@ func _read_metadata(meta_path: String, fallback_name: String) -> Dictionary:
 
 
 func _resolve_load_order(descriptors: Array) -> Array:
-	var by_id: = {}
+	var by_id:= {}
 
 	for d in descriptors:
 		by_id[d.id] = d
@@ -123,16 +150,16 @@ func _resolve_load_order(descriptors: Array) -> Array:
 			if by_id.has(target_id):
 				by_id[target_id].load_after.append(d.id)
 
-	var loaded: = {}
-	var result: = []
-	var remaining: = descriptors.duplicate()
+	var loaded:= {}
+	var result:= []
+	var remaining:= descriptors.duplicate()
 
 	while remaining.size() > 0:
-		var progressed: = false
+		var progressed:= false
 
 		for i in remaining.size():
 			var d = remaining[i]
-			var ready_to_load: = true
+			var ready_to_load:= true
 
 			for dep_id in d.load_after:
 				if by_id.has(dep_id) and not loaded.has(dep_id):
@@ -157,8 +184,11 @@ func _resolve_load_order(descriptors: Array) -> Array:
 	return result
 
 
-func _instantiate_mod(descriptor: Dictionary) -> void :
-	var script: = load(descriptor.script_path)
+func _instantiate_gd_mod(descriptor: Dictionary) -> void:
+	print(descriptor)
+	print(FileAccess.file_exists("res://mod/pck/pck.gd"))
+	var script := load(descriptor.script_path)
+	print(script)
 
 	if not script is GDScript:
 		push_warning("[DuckLoader] '%s' is not a valid script" % descriptor.script_path)
@@ -198,43 +228,49 @@ func get_loaded_mod_ids() -> Array:
 	return _mod_registry.keys()
 
 
-func _physics_process(delta: float) -> void :
+func _physics_process(delta: float) -> void:
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_mod_tick"):
 			mod._mod_tick(delta)
 
 
-func _process(delta: float) -> void :
+func _process(delta: float) -> void:
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_mod_render"):
 			mod._mod_render(delta)
 
 
-func _on_game_loaded(success: bool) -> void :
+func _on_game_loaded(success: bool) -> void:
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_on_game_loaded"):
 			mod._on_game_loaded(success)
 
 
-func _notification(what: int) -> void :
+func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		_fire_game_close()
 
 
-func _exit_tree() -> void :
+func _exit_tree() -> void:
 	_fire_game_close()
 
 
-func log_message(message: String) -> void :
+func log_message(message: String) -> void:
 	print(message)
 
-	var console: = get_node_or_null("/root/DebugConsole")
+	var console:= get_node_or_null("/root/DebugConsole")
 
 	if console and console.has_method("log_line"):
 		console.log_line(message)
 
+func add_command(name: String, function: Callable, desc="") -> void:
+	var console:= get_node_or_null("/root/DebugConsole")
 
-func _fire_game_close() -> void :
+	if console and console.has_method("add_command"):
+		console.add_command(name, function, desc)
+
+
+func _fire_game_close() -> void:
 	if _close_fired:
 		return
 
