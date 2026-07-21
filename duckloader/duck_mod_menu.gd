@@ -43,7 +43,9 @@ func _input(event: InputEvent) -> void :
 			_pending_values[listener.setting_id] = keycode
 			_mark_dirty()
 
-		listener.button.text = _key_display_text(_pending_values.get(listener.setting_id, _baseline_values.get(listener.setting_id, 0)))
+		listener.button.text = _key_display_text(
+			_pending_values.get(listener.setting_id, _baseline_values.get(listener.setting_id, 0))
+		)
 		get_viewport().set_input_as_handled()
 
 
@@ -243,7 +245,7 @@ func _on_mod_selected(mod_id: String) -> void :
 			current_category = entry.category
 			var cat_label: = Label.new()
 			cat_label.text = entry.category
-			cat_label.add_theme_font_size_override("font_size", 16)
+			cat_label.add_theme_font_size_override("font_size", 20)
 			_detail_box.add_child(cat_label)
 
 		_detail_box.add_child(_build_setting_control(mod_id, entry))
@@ -285,12 +287,16 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		action_btn.pressed.connect(func(): DuckLoader.trigger_mod_action(mod_id, entry.id))
 		return action_btn
 
-	var wrapper: = VBoxContainer.new()
-	wrapper.add_theme_constant_override("separation", 6)
+	var is_slider: bool = entry.type in ["float_slider", "int_slider"]
+	var wrapper: Control = VBoxContainer.new() if is_slider else HBoxContainer.new()
+	wrapper.add_theme_constant_override("separation", 12)
 	wrapper.focus_mode = Control.FOCUS_NONE
+	
 
 	var label: = Label.new()
 	label.text = entry.name
+	if not is_slider:
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	if entry.tooltip != "":
 		label.tooltip_text = entry.tooltip
@@ -345,7 +351,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 				_pending_values[entry.id] = line.text
 				_mark_dirty()
 			)
-			line.custom_minimum_size.y = 32
+			line.custom_minimum_size = Vector2(400, 32)
 			wrapper.add_child(line)
 			_control_refresh[entry.id] = func(value): line.text = str(value)
 
@@ -361,8 +367,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 				_pending_values[entry.id] = line.text
 				_mark_dirty()
 			)
-			line.custom_minimum_size.y = 32
-			line.add_theme_constant_override("margin_bottom", 3)
+			line.custom_minimum_size = Vector2(400, 32)
 			wrapper.add_child(line)
 			_control_refresh[entry.id] = func(value): line.text = value
 
@@ -389,7 +394,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 					select_index = i
 
 			option.select(select_index)
-			option.custom_minimum_size.y = 32
+			option.custom_minimum_size = Vector2(400, 32)
 			option.item_selected.connect(func(index):
 				_pending_values[entry.id] = option.get_item_metadata(index)
 				_mark_dirty()
@@ -404,7 +409,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		"color_picker":
 			var picker: = ColorPickerButton.new()
 			picker.color = current
-			picker.custom_minimum_size = Vector2(80, 32)
+			picker.custom_minimum_size = Vector2(400, 32)
 			picker.color_changed.connect(func(c):
 				_pending_values[entry.id] = c
 				_mark_dirty()
@@ -423,7 +428,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 				key_btn.text = "Press a key... (Esc to cancel)"
 				_keybind_listener = {"mod_id": mod_id, "setting_id": entry.id, "button": key_btn}
 			)
-			key_btn.custom_minimum_size.y = 32
+			key_btn.custom_minimum_size = Vector2(400, 32)
 			wrapper.add_child(key_btn)
 			_control_refresh[entry.id] = func(value): key_btn.text = _key_display_text(value)
 
