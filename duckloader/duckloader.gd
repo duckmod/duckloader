@@ -9,6 +9,7 @@ var _mod_registry:= {}
 var _mod_info:= {}
 var _close_fired:= false
 
+
 func _ready() -> void:
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
 	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version + " )")
@@ -23,6 +24,7 @@ func _hook_save_events() -> void:
 
 	if save_manager and save_manager.has_signal("game_loaded"):
 		save_manager.game_loaded.connect(_on_game_loaded)
+
 
 func _load_gd_mods() -> void:
 	var dir:= DirAccess.open(_mods_dir)
@@ -52,13 +54,10 @@ func _load_gd_mods() -> void:
 			continue
 
 		var full_path:= _mods_dir.path_join(entry_name)
-
 		var descriptor: Dictionary
 
 		if entry_name.ends_with(".pck"):
-			print(_mods_dir.path_join(entry_name))
 			var success = ProjectSettings.load_resource_pack(_mods_dir.path_join(entry_name))
-			print(success)
 
 			if !success:
 				# TODO: Make a gui for when asome mod couldnt load
@@ -73,18 +72,23 @@ func _load_gd_mods() -> void:
 
 				var json_path := "res://mod".path_join(base_name).path_join(base_name) + ".json"
 				var entry_path := "res://mod".path_join(base_name).path_join(base_name)+ ".gd"
-				descriptor = _build_descriptor(entry_path, json_path, base_name)
+				descriptor = _build_descriptor(entry_path, json_path, base_name, true)
+				if descriptor:
+					descriptors.append(descriptor)
+				continue
 
 		if DirAccess.dir_exists_absolute(full_path):
-			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name)
+			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name, false)
 		elif entry_name.ends_with(".gd"):
 			var base_name:= entry_name.get_basename()
-			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name)
+			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name, false)
 		else:
 			continue
 
 		if descriptor:
 			descriptors.append(descriptor)
+
+	print(descriptors)
 
 	for order in _resolve_load_order(descriptors):
 		_instantiate_gd_mod(order)
@@ -92,12 +96,18 @@ func _load_gd_mods() -> void:
 	print("[DuckLoader] Loaded %d mod(s)" % _mods.size())
 
 
-func _build_descriptor(script_path: String, meta_path: String, fallback_name: String) -> Dictionary:
+func _build_descriptor(script_path: String, meta_path: String, fallback_name: String, is_pck: bool) -> Dictionary:
 
-	if not FileAccess.file_exists(script_path) and !ResourceLoader.exists(script_path):
+	if not FileAccess.file_exists(script_path) and !is_pck:
 		return {}
 
-	var meta:= _read_metadata(meta_path, fallback_name)
+	#var script: Script = load(script_path)
+	#var instance = script.new()
+	#add_child(instance)
+	#if instance.has_method("_mod_ready"):
+		#instance._mod_ready()
+
+	var meta:= _read_metadata(meta_path, fallback_name, is_pck)
 
 	return {
 		"id": meta.id,
@@ -108,7 +118,7 @@ func _build_descriptor(script_path: String, meta_path: String, fallback_name: St
 	}
 
 
-func _read_metadata(meta_path: String, fallback_name: String) -> Dictionary:
+func _read_metadata(meta_path: String, fallback_name: String, is_pck: bool) -> Dictionary:
 	var meta:= {
 		"id": fallback_name,
 		"name": fallback_name,
@@ -119,7 +129,7 @@ func _read_metadata(meta_path: String, fallback_name: String) -> Dictionary:
 		"load_before": [],
 	}
 
-	if not FileAccess.file_exists(meta_path):
+	if not FileAccess.file_exists(meta_path) and !is_pck:
 		return meta
 
 	var text:= FileAccess.get_file_as_string(meta_path)
@@ -182,10 +192,8 @@ func _resolve_load_order(descriptors: Array) -> Array:
 
 
 func _instantiate_gd_mod(descriptor: Dictionary) -> void:
-	print(descriptor)
-	print(FileAccess.file_exists("res://mod/pck/pck.gd"))
+
 	var script := load(descriptor.script_path)
-	print(script)
 
 	if not script is GDScript:
 		push_warning("[DuckLoader] '%s' is not a valid script" % descriptor.script_path)
@@ -260,6 +268,7 @@ func log_message(message: String) -> void:
 	if console and console.has_method("log_line"):
 		console.log_line(message)
 
+
 func add_command(name: String, function: Callable, desc="") -> void:
 	var console:= get_node_or_null("/root/DebugConsole")
 
@@ -272,7 +281,7 @@ func _fire_game_close() -> void:
 		return
 
 	_close_fired = true
- 
+
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_on_game_close"):
 			mod._on_game_close()
