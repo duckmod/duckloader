@@ -7,6 +7,8 @@ var _mod_buttons: = {}
 var _mod_button_group: ButtonGroup
 var _default_icon: Texture2D
 var _keybind_listener: Variant = null
+var _icon_cache: = {}
+var _save_button: Button = null
 
 var _pending_mod_id: = ""
 var _pending_values: = {}
@@ -39,6 +41,7 @@ func _input(event: InputEvent) -> void :
 
 		if keycode != KEY_ESCAPE:
 			_pending_values[listener.setting_id] = keycode
+			_mark_dirty()
 
 		listener.button.text = _key_display_text(_pending_values.get(listener.setting_id, _baseline_values.get(listener.setting_id, 0)))
 		get_viewport().set_input_as_handled()
@@ -49,6 +52,9 @@ func _key_display_text(keycode: int) -> String:
 
 
 func _load_icon(mod_id: String) -> Texture2D:
+	if _icon_cache.has(mod_id):
+		return _icon_cache[mod_id]
+
 	var path: = DuckLoader.get_mod_icon_path(mod_id)
 
 	if path == "":
@@ -60,7 +66,9 @@ func _load_icon(mod_id: String) -> Texture2D:
 		return _default_icon
 
 	img.resize(64, 64)
-	return ImageTexture.create_from_image(img)
+	var tex: = ImageTexture.create_from_image(img)
+	_icon_cache[mod_id] = tex
+	return tex
 
 
 func _build_ui() -> void :
@@ -134,6 +142,7 @@ func _build_ui() -> void :
 
 func _populate_mod_list() -> void :
 	for child in _mod_list_box.get_children():
+		_mod_list_box.remove_child(child)
 		child.queue_free()
 
 	_mod_buttons.clear()
@@ -156,6 +165,8 @@ func _populate_mod_list() -> void :
 		row.text = "  " + str(meta.get("name", mod_id))
 		row.icon = _load_icon(mod_id)
 		row.pressed.connect(_on_mod_selected.bind(mod_id))
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		row.add_theme_color_override("font_color", Color("#ffffff"))
 		row.add_theme_color_override("font_hover_color", Color("#ffffff"))
 		row.add_theme_color_override("font_pressed_color", Color("#ffffff"))
@@ -171,6 +182,7 @@ func _on_mod_selected(mod_id: String) -> void :
 		_mod_buttons[mod_id].button_pressed = true
 
 	for child in _detail_box.get_children():
+		_detail_box.remove_child(child)
 		child.queue_free()
 
 	_pending_mod_id = mod_id
@@ -208,7 +220,9 @@ func _on_mod_selected(mod_id: String) -> void :
 
 	var save_btn: = Button.new()
 	save_btn.text = "Save"
+	save_btn.disabled = true
 	save_btn.pressed.connect(_save_pending_changes)
+	_save_button = save_btn
 	header.add_child(save_btn)
 
 	var desc_text: String = str(meta.get("description", ""))
@@ -273,6 +287,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 
 	var wrapper: = VBoxContainer.new()
 	wrapper.add_theme_constant_override("separation", 6)
+	wrapper.focus_mode = Control.FOCUS_NONE
 
 	var label: = Label.new()
 	label.text = entry.name
@@ -310,6 +325,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 				var staged = roundi(v) if is_int else v
 				_pending_values[entry.id] = staged
 				value_label.text = str(staged)
+				_mark_dirty()
 			)
 			row.add_child(slider)
 			row.add_child(value_label)
@@ -321,7 +337,14 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		"float_input", "int_input":
 			var line: = LineEdit.new()
 			line.text = str(current)
-			line.text_changed.connect(func(t): _pending_values[entry.id] = t)
+			line.text_submitted.connect(func(t): 
+				_pending_values[entry.id] = t
+				_mark_dirty()
+			)
+			line.focus_exited.connect(func(): 
+				_pending_values[entry.id] = line.text
+				_mark_dirty()
+			)
 			line.custom_minimum_size.y = 32
 			wrapper.add_child(line)
 			_control_refresh[entry.id] = func(value): line.text = str(value)
@@ -330,7 +353,14 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			var line: = LineEdit.new()
 			line.text = current
 			line.max_length = entry.max_len
-			line.text_changed.connect(func(t): _pending_values[entry.id] = t)
+			line.text_submitted.connect(func(t): 
+				_pending_values[entry.id] = t
+				_mark_dirty()
+			)
+			line.focus_exited.connect(func(): 
+				_pending_values[entry.id] = line.text
+				_mark_dirty()
+			)
 			line.custom_minimum_size.y = 32
 			line.add_theme_constant_override("margin_bottom", 3)
 			wrapper.add_child(line)
@@ -339,7 +369,10 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 		"checkbox":
 			var check: = CheckBox.new()
 			check.button_pressed = current
-			check.toggled.connect(func(pressed): _pending_values[entry.id] = pressed)
+			check.toggled.connect(func(pressed): 
+				_pending_values[entry.id] = pressed
+				_mark_dirty()
+			)
 			wrapper.add_child(check)
 			_control_refresh[entry.id] = func(value): check.set_pressed_no_signal(value)
 
@@ -359,6 +392,7 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			option.custom_minimum_size.y = 32
 			option.item_selected.connect(func(index):
 				_pending_values[entry.id] = option.get_item_metadata(index)
+				_mark_dirty()
 			)
 			wrapper.add_child(option)
 			_control_refresh[entry.id] = func(value):
@@ -371,9 +405,16 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 			var picker: = ColorPickerButton.new()
 			picker.color = current
 			picker.custom_minimum_size = Vector2(80, 32)
-			picker.color_changed.connect(func(c): _pending_values[entry.id] = c)
+			picker.color_changed.connect(func(c):
+				_pending_values[entry.id] = c
+				_mark_dirty()
+			)
 			wrapper.add_child(picker)
-			_control_refresh[entry.id] = func(value): picker.color = Color(value)
+			_control_refresh[entry.id] = func(value): 
+				if value is Color:
+					picker.color = value
+				elif value is String:
+					picker.color = Color.html(value) if Color.html_is_valid(value) else Color.WHITE
 
 		"keybind":
 			var key_btn: = Button.new()
@@ -393,6 +434,9 @@ func _build_setting_control(mod_id: String, entry: Dictionary) -> Control:
 func _save_pending_changes() -> void :
 	if _pending_mod_id == "":
 		return
+
+	if _save_button:
+		_save_button.disabled = true
 
 	for setting_id in _pending_values.keys():
 		var pending = _pending_values[setting_id]
@@ -421,3 +465,7 @@ func _show_error(error_label: Label, result: Dictionary) -> void :
 
 	if not result.valid:
 		error_label.text = result.error
+
+func _mark_dirty() -> void:
+	if _save_button:
+		_save_button.disabled = false
