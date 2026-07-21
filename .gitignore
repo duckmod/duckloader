@@ -3,10 +3,10 @@
 *.exe
 *.pck
 *.x86_64
-*.gd.uid
+*.gd.uid*
 LICENSE.txt
 mods/
 /decompiled/
 .idea
 *proton.cache*
-project.godot
+*project.godot*
