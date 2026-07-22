@@ -12,7 +12,7 @@ var _close_fired:= false
 
 func _ready() -> void:
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
-	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloaded " + loader_version + " )")
+	ProjectSettings.set_setting("application/config/version", _game_version + " - ( Duckloaded " + loader_version + " )")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_mods_dir = OS.get_executable_path().get_base_dir().path_join("mods")
 	_hook_save_events()
@@ -67,28 +67,31 @@ func _load_gd_mods() -> void:
 				continue
 
 			if success:
-				# For now the descriptor loading is not available bc the mod.json is inside the mod
 				var base_name:= entry_name.get_basename()
 
 				var json_path := "res://mod".path_join(base_name).path_join(base_name) + ".json"
 				var entry_path := "res://mod".path_join(base_name).path_join(base_name)+ ".gd"
 				descriptor = _build_descriptor(entry_path, json_path, base_name, true)
+
 				if descriptor:
 					descriptors.append(descriptor)
+
 				continue
 
 		if DirAccess.dir_exists_absolute(full_path):
 			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name, false)
+
 		elif entry_name.ends_with(".gd"):
 			var base_name:= entry_name.get_basename()
 			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name, false)
+		elif entry_name.ends_with(".json"):
+			continue
 		else:
+			log_message("[DuckLoader] Couldn't load mod with the name %s, its not neither a .gd script or a pck mod!" % entry_name)
 			continue
 
 		if descriptor:
 			descriptors.append(descriptor)
-
-	print(descriptors)
 
 	for order in _resolve_load_order(descriptors):
 		_instantiate_gd_mod(order)
@@ -125,6 +128,7 @@ func _read_metadata(meta_path: String, fallback_name: String, is_pck: bool) -> D
 		"version": "unknown",
 		"author": "unknown",
 		"description": "",
+		"pck_mod": is_pck,
 		"load_after": [],
 		"load_before": [],
 	}
