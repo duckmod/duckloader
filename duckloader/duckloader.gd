@@ -63,7 +63,7 @@ func _load_gd_mods() -> void:
 				# TODO: Make a gui for when asome mod couldnt load
 				# or when a error occurs after load
 				# like what forge does in minecraft.
-				printerr("[DuckLoader] Mod pck %s couldn't be loaded!")
+				printerr("[DuckLoader] Mod pck '%s' couldn't be loaded!" % entry_name)
 				continue
 
 			if success:
