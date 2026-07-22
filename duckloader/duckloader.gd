@@ -87,7 +87,7 @@ func _load_gd_mods() -> void:
 		elif entry_name.ends_with(".json"):
 			continue
 		else:
-			log_message("[DuckLoader] Couldn't load mod with the name %s, its not neither a .gd script or a pck mod!" % entry_name)
+			log_message("[DuckLoader] Couldn't load mod '%s': it's neither a .gd script nor a .pck mod." % entry_name)
 			continue
 
 		if descriptor:
