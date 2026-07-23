@@ -319,7 +319,7 @@ func _cmd_clear(_args: PackedStringArray) -> void :
 
 
 func _cmd_list(_args: PackedStringArray) -> void :
-	var ids: = ObjectPoolManager.POOL_CONFIG.keys()
+	var ids: = ObjectPoolManager._pools.keys()
 	ids.sort()
 	log_line("[b]Pool objects:[/b] " + ", ".join(ids))
 
@@ -367,7 +367,7 @@ func _cmd_spawn(args: PackedStringArray) -> void :
 
 	var scene: PackedScene = null
 
-	if not ObjectPoolManager.POOL_CONFIG.has(object_name):
+	if not ObjectPoolManager._pools.has(object_name):
 		var scene_path: = "res://scenes/%s.tscn" % object_name
 
 		if not ResourceLoader.exists(scene_path):

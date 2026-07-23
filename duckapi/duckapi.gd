@@ -46,3 +46,31 @@ func _find_pool_id(obj: Node3D) -> String:
 			return id
 
 	return ""
+
+func add_spawnable(pool_id: String, scene_path: String, initial_count: int, max_count: int) -> bool:
+	if not ResourceLoader.exists(scene_path):
+		push_error("[DuckAPI] Path does not exist: " + scene_path)
+		return false
+		
+	var scene_res = load(scene_path) as PackedScene
+	if not scene_res:
+		push_error("[DuckAPI] Failed to load PackedScene: " + scene_path)
+		return false
+
+	if ObjectPoolManager._pools.has(pool_id):
+		push_warning("[DuckAPI] Pool ID already exists: " + pool_id)
+		return false
+
+	var new_pool = ObjectPoolManager.Pool.new()
+	new_pool.scene = scene_res
+	new_pool.max_size = max_count
+	
+	ObjectPoolManager._pools[pool_id] = new_pool
+
+	for i in range(initial_count):
+		var obj = ObjectPoolManager._instantiate(new_pool)
+		ObjectPoolManager._deactivate(obj)
+		new_pool.available.append(obj)
+
+	print("[DuckAPI] Successfully registered modded pool: %s" % pool_id)
+	return true
