@@ -68,13 +68,26 @@ func _load_icon(mod_id: String) -> Texture2D:
 	if path == "":
 		return _default_icon
 
-	var img: = Image.new()
+	var tex: Texture2D = null
 
-	if img.load(path) != OK:
+	if path.begins_with("res://"):
+		if ResourceLoader.exists(path):
+			var loaded_res = load(path)
+			if loaded_res is Texture2D:
+				tex = loaded_res
+			elif loaded_res is Image:
+				loaded_res.resize(64, 64)
+				tex = ImageTexture.create_from_image(loaded_res)
+
+	else:
+		var img: = Image.new()
+		if img.load(path) == OK:
+			img.resize(64, 64)
+			tex = ImageTexture.create_from_image(img)
+
+	if not tex:
 		return _default_icon
 
-	img.resize(64, 64)
-	var tex: = ImageTexture.create_from_image(img)
 	_icon_cache[mod_id] = tex
 	return tex
 
@@ -132,7 +145,7 @@ func _build_ui() -> void :
 
 	_mod_list_box = VBoxContainer.new()
 	_mod_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_mod_list_box.add_theme_constant_override("separation", 4)
+	_mod_list_box.add_theme_constant_override("v_separation", 8)
 	left_scroll.add_child(_mod_list_box)
 
 	var right_scroll: = ScrollContainer.new()
@@ -172,6 +185,9 @@ func _populate_mod_list() -> void :
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		row.text = "  " + str(meta.get("name", mod_id))
 		row.icon = _load_icon(mod_id)
+		row.custom_minimum_size = Vector2(0, 64)
+		row.expand_icon = true
+		row.add_theme_constant_override("icon_max_width", 128)
 		row.pressed.connect(_on_mod_selected.bind(mod_id))
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS

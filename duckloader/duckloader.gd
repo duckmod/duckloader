@@ -162,10 +162,12 @@ func _read_metadata(meta_path: String, fallback_name: String, is_pck: bool) -> D
 		push_warning("[DuckLoader] '%s' has an invalid 'id', falling back to '%s'" % [meta_path, fallback_name])
 		meta.id = fallback_name
 
-	if typeof(meta.icon) != TYPE_STRING or meta.icon.is_empty() or meta.icon.is_absolute_path() or ".." in meta.icon:
+	var is_res_path: bool = meta.icon.begins_with("res://")
+	var is_invalid_abs: bool = meta.icon.is_absolute_path() and not is_res_path
+
+	if typeof(meta.icon) != TYPE_STRING or meta.icon.is_empty() or is_invalid_abs or ".." in meta.icon:
 		if meta.icon != "":
 			push_warning("[DuckLoader] '%s' has an invalid 'icon', ignoring it" % meta_path)
-
 		meta.icon = ""
 
 	if typeof(meta.settings) != TYPE_ARRAY:
@@ -351,7 +353,16 @@ func get_mod_icon_path(mod_id: String) -> String:
 	if dir == "" or meta.get("icon", "") == "":
 		return ""
 
-	var path: = dir.path_join(meta.icon)
+	var raw_icon: String = meta.icon
+	var path: String = ""
+
+	if raw_icon.begins_with("res://"):
+		path = raw_icon
+	else:
+		path = dir.path_join(raw_icon)
+
+	if path.begins_with("res://"):
+		return path if ResourceLoader.exists(path) or FileAccess.file_exists(path) else ""
 
 	return path if FileAccess.file_exists(path) else ""
 
