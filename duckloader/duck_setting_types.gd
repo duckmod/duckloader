@@ -257,7 +257,7 @@ static func _coerce_combo(entry: Dictionary, raw_value: Variant) -> Dictionary:
 	return {"ok": false, "value": null, "error": "'%s' isn't a valid option" % str(raw_value)}
 
 
-static func _coerce_color(entry: Dictionary, raw_value: Variant) -> Dictionary:
+static func _coerce_color(_entry: Dictionary, raw_value: Variant) -> Dictionary:
 	var hex: String
 
 	if raw_value is Color:

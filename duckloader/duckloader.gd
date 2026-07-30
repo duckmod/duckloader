@@ -78,7 +78,8 @@ func _load_gd_mods() -> void:
 
 				var json_path := "res://mod".path_join(base_name).path_join(base_name) + ".json"
 				var entry_path := "res://mod".path_join(base_name).path_join(base_name)+ ".gd"
-				descriptor = _build_descriptor(entry_path, json_path, base_name, true)
+				var mod_dir := "res://mod".path_join(base_name)
+				descriptor = _build_descriptor(entry_path, json_path, base_name, true, mod_dir)
 
 				if descriptor:
 					descriptors.append(descriptor)
@@ -86,11 +87,11 @@ func _load_gd_mods() -> void:
 				continue
 
 		if DirAccess.dir_exists_absolute(full_path):
-			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name, false)
+			descriptor = _build_descriptor(full_path.path_join("mod.gd"), full_path.path_join("mod.json"), entry_name, false, full_path)
 
 		elif entry_name.ends_with(".gd"):
 			var base_name:= entry_name.get_basename()
-			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name, false)
+			descriptor = _build_descriptor(full_path, _mods_dir.path_join(base_name) + ".json", base_name, false, _mods_dir)
 		elif entry_name.ends_with(".json"):
 			continue
 		else:
@@ -106,7 +107,7 @@ func _load_gd_mods() -> void:
 	print("[DuckLoader] Loaded %d mod(s)" % _mods.size())
 
 
-func _build_descriptor(script_path: String, meta_path: String, fallback_name: String, is_pck: bool) -> Dictionary:
+func _build_descriptor(script_path: String, meta_path: String, fallback_name: String, is_pck: bool, mod_dir) -> Dictionary:
 
 	if not FileAccess.file_exists(script_path) and !is_pck:
 		return {}
