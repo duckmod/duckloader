@@ -14,6 +14,7 @@ const NOCLIP_SPEED_SCROLL_FACTOR: = 1.15
 var _root: Control
 var _output: RichTextLabel
 var _input_line: LineEdit
+var _ghost_line: LineEdit
 
 var _commands: = {}
 var _history: Array[String] = []
@@ -70,12 +71,41 @@ func _build_ui() -> void :
 	_output.custom_minimum_size = Vector2(0, 280)
 	vbox.add_child(_output)
 
+	var input_container: = MarginContainer.new()
+	vbox.add_child(input_container)
+
+	var style_box: = StyleBoxFlat.new()
+	style_box.bg_color = Color(0, 0, 0, 0.3)
+	style_box.content_margin_left = 6.0
+	style_box.content_margin_right = 6.0
+	style_box.content_margin_top = 4.0
+	style_box.content_margin_bottom = 4.0
+
+	_ghost_line = LineEdit.new()
+	_ghost_line.process_mode = Node.PROCESS_MODE_ALWAYS
+	_ghost_line.editable = false
+	_ghost_line.focus_mode = Control.FOCUS_NONE
+	_ghost_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ghost_line.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 0.8))
+	_ghost_line.add_theme_stylebox_override("normal", style_box)
+	_ghost_line.add_theme_stylebox_override("read_only", style_box)
+	input_container.add_child(_ghost_line)
+
+	var transparent_style: = StyleBoxEmpty.new()
+	transparent_style.content_margin_left = style_box.content_margin_left
+	transparent_style.content_margin_right = style_box.content_margin_right
+	transparent_style.content_margin_top = style_box.content_margin_top
+	transparent_style.content_margin_bottom = style_box.content_margin_bottom
+
 	_input_line = LineEdit.new()
 	_input_line.placeholder_text = "type 'help' and press enter"
 	_input_line.process_mode = Node.PROCESS_MODE_ALWAYS
+	_input_line.add_theme_stylebox_override("normal", transparent_style)
+	_input_line.add_theme_stylebox_override("focus", transparent_style)
 	_input_line.text_submitted.connect(_on_text_submitted)
+	_input_line.text_changed.connect(_on_text_changed)
 	_input_line.gui_input.connect(_on_input_line_gui_input)
-	vbox.add_child(_input_line)
+	input_container.add_child(_input_line)
 
 	_hud = Control.new()
 	_hud.anchor_left = 0.0
@@ -246,16 +276,26 @@ func add_command(name: String, function: Callable, desc: String = "") -> void:
 			"desc": desc
 		}
 
-func _on_input_line_gui_input(event: InputEvent) -> void :
+func _on_input_line_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed):
 		return
 
+	if event.keycode == KEY_TAB or (event.keycode == KEY_RIGHT and _input_line.caret_column == _input_line.text.length()):
+		if not _ghost_line.text.is_empty() and _ghost_line.text != _input_line.text:
+			_input_line.text = _ghost_line.text + " "
+			_input_line.caret_column = _input_line.text.length()
+			_ghost_line.text = ""
+			get_viewport().set_input_as_handled()
+			return
+
 	if event.keycode == KEY_UP:
 		_navigate_history(-1)
-		_input_line.accept_event()
+		_ghost_line.text = ""
+		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_DOWN:
 		_navigate_history(1)
-		_input_line.accept_event()
+		_ghost_line.text = ""
+		get_viewport().set_input_as_handled()
 
 
 func _navigate_history(direction: int) -> void :
@@ -272,6 +312,7 @@ func _navigate_history(direction: int) -> void :
 
 
 func _on_text_submitted(text: String) -> void :
+	_ghost_line.text = ""
 	var trimmed: = text.strip_edges()
 	_input_line.text = ""
 
@@ -319,7 +360,7 @@ func _cmd_clear(_args: PackedStringArray) -> void :
 
 
 func _cmd_list(_args: PackedStringArray) -> void :
-	var ids: = ObjectPoolManager.POOL_CONFIG.keys()
+	var ids: = ObjectPoolManager._pools.keys()
 	ids.sort()
 	log_line("[b]Pool objects:[/b] " + ", ".join(ids))
 
@@ -367,7 +408,7 @@ func _cmd_spawn(args: PackedStringArray) -> void :
 
 	var scene: PackedScene = null
 
-	if not ObjectPoolManager.POOL_CONFIG.has(object_name):
+	if not ObjectPoolManager._pools.has(object_name):
 		var scene_path: = "res://scenes/%s.tscn" % object_name
 
 		if not ResourceLoader.exists(scene_path):
@@ -631,3 +672,32 @@ func _parse_value(raw: String):
 		return float(raw)
 
 	return raw
+
+func _on_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		_ghost_line.text = ""
+		return
+
+	var ghost_suggestion: = ""
+	var parts: PackedStringArray = new_text.split(" ", false)
+
+	if parts.size() == 1 and not new_text.ends_with(" "):
+		var prefix: = parts[0].to_lower()
+		for cmd in _commands.keys():
+			if cmd.to_lower().begins_with(prefix):
+				ghost_suggestion = new_text + cmd.substr(prefix.length())
+				break
+
+	elif parts.size() >= 1:
+		var cmd: = parts[0].to_lower()
+		if cmd == "spawn":
+			var current_arg: String = parts[1] if parts.size() == 2 else ""
+			if parts.size() <= 2 and not (parts.size() == 2 and new_text.ends_with(" ")):
+				var pool_ids: Array = ObjectPoolManager._pools.keys()
+				for id in pool_ids:
+					if id.to_lower().begins_with(current_arg.to_lower()):
+						var remaining: String = id.substr(current_arg.length())
+						ghost_suggestion = new_text + remaining
+						break
+
+	_ghost_line.text = ghost_suggestion
