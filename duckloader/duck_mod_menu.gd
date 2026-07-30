@@ -182,6 +182,8 @@ func _populate_mod_list() -> void :
 		_mod_list_box.add_child(row)
 		_mod_buttons[mod_id] = row
 
+	await get_tree().create_timer(0.01).timeout
+
 	_on_mod_selected(ids[0])
 
 
