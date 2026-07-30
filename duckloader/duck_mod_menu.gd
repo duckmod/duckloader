@@ -29,15 +29,15 @@ func get_background() -> Control:
 	return _background
 
 
-func _input(event: InputEvent) -> void :
-	if _keybind_listener == null:
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 
-	if event is InputEventKey and event.pressed and not event.echo:
-		var listener: = _keybind_listener
-		_keybind_listener = null
+	var keycode: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
 
-		var keycode: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+	if _keybind_listener != null:
+		var listener := _keybind_listener
+		_keybind_listener = null
 
 		if keycode != KEY_ESCAPE:
 			_pending_values[listener.setting_id] = keycode
@@ -46,6 +46,12 @@ func _input(event: InputEvent) -> void :
 		listener.button.text = _key_display_text(
 			_pending_values.get(listener.setting_id, _baseline_values.get(listener.setting_id, 0))
 		)
+		
+		get_viewport().set_input_as_handled()
+		return
+
+	if keycode == KEY_ESCAPE:
+		MenuManager.close_current_menu()
 		get_viewport().set_input_as_handled()
 
 
