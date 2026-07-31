@@ -77,8 +77,8 @@ func _build_ui() -> void:
 
 	var btn_mods := _create_button("Open Mods Folder", open_mods_folder)
 	var btn_log := _create_button("Open logs folder", open_logs_folder)
-	var btn_crash := _create_button("Continue (Ignore)", func(): print("hi"))
-	var btn_quit := _create_button("Quit Game", func(): print("hi"))
+	var btn_crash := _create_button("Continue (Ignore)", MenuManager.close_current_menu)
+	var btn_quit := _create_button("Quit Game", func(): print("Closing game via error menu (Gets handeled by main-menu in bg)"))
 
 	_button_grid.add_child(btn_mods)
 	_button_grid.add_child(btn_log)
