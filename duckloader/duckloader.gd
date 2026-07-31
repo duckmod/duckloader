@@ -450,9 +450,11 @@ func trigger_mod_action(mod_id: String, setting_id: String) -> void :
 
 func open_mod_menu() -> void :
 	var menu: = preload("res://duckloader/duck_mod_menu.gd").new()
+	menu.ready.connect(func():
+		MenuManager.register_scaled_menu(menu.get_background())
+		MenuManager.open_menu(menu)
+	)
 	get_tree().current_scene.add_child(menu)
-	MenuManager.register_scaled_menu(menu.get_background())
-	MenuManager.open_menu(menu)
 
 
 func _physics_process(delta: float) -> void :
