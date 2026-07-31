@@ -1,6 +1,6 @@
 extends Node
 
-const loader_version := "0.0.1"
+const loader_version := "0.2.0"
 
 const DuckModSettings: = preload("res://duckloader/duck_mod_settings.gd")
 const DuckSettingTypes: = preload("res://duckloader/duck_setting_types.gd")
