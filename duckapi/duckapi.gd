@@ -8,6 +8,9 @@ signal object_spawned(pool_id: String, node: Node3D)
 signal before_recycle(event)
 signal object_recycled(pool_id: String, node: Node3D)
 
+signal before_initialize(event)
+signal initialized(loaded_resources: Dictionary)
+
 func spawn(pool_id: String, position: = Vector3.ZERO, rotation: = Vector3.ZERO) -> Node3D:
 	var event: = HookEvent.new()
 	event.data = {"pool_id": pool_id, "position": position, "rotation": rotation}
@@ -74,3 +77,15 @@ func add_spawnable(pool_id: String, scene_path: String, initial_count: int, max_
 
 	print("[DuckAPI] Successfully registered modded pool: %s" % pool_id)
 	return true
+
+func initialize(loaded_resources: Dictionary) -> void:
+	var event: = HookEvent.new()
+	event.data = {"loaded_resources": loaded_resources}
+	before_initialize.emit(event)
+
+	if event.cancelled:
+		return
+
+	super.initialize(event.get_value("loaded_resources"))
+
+	initialized.emit(event.get_value("loaded_resources"))
