@@ -162,13 +162,21 @@ func _read_metadata(meta_path: String, fallback_name: String, is_pck: bool) -> D
 		push_warning("[DuckLoader] '%s' has an invalid 'id', falling back to '%s'" % [meta_path, fallback_name])
 		meta.id = fallback_name
 
-	var is_res_path: bool = meta.icon.begins_with("res://")
-	var is_invalid_abs: bool = meta.icon.is_absolute_path() and not is_res_path
+	var raw_icon := meta.icon
 
-	if typeof(meta.icon) != TYPE_STRING or meta.icon.is_empty() or is_invalid_abs or ".." in meta.icon:
-		if meta.icon != "":
+	if typeof(raw_icon) != TYPE_STRING:
+		if raw_icon != null and str(raw_icon) != "":
 			push_warning("[DuckLoader] '%s' has an invalid 'icon', ignoring it" % meta_path)
 		meta.icon = ""
+	else:
+		var icon_str: String = raw_icon
+		var is_res_path: bool = icon_str.begins_with("res://")
+		var is_invalid_abs: bool = icon_str.is_absolute_path() and not is_res_path
+
+		if icon_str.is_empty() or is_invalid_abs or ".." in icon_str:
+			if icon_str != "":
+				push_warning("[DuckLoader] '%s' has an invalid 'icon', ignoring it" % meta_path)
+			meta.icon = ""
 
 	if typeof(meta.settings) != TYPE_ARRAY:
 		push_warning("[DuckLoader] '%s' has a non-array 'settings', ignoring it" % meta_path)
