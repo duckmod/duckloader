@@ -319,26 +319,20 @@ func get_loaded_mod_ids() -> Array:
 	return _mod_registry.keys()
 
 
-func getFloat(mod_id: String, setting_id: String) -> float:
-	return float(_mod_settings.get(mod_id, {}).get(setting_id, 0.0))
-
-
-func getInt(mod_id: String, setting_id: String) -> int:
-	return int(_mod_settings.get(mod_id, {}).get(setting_id, 0))
-
-
-func getString(mod_id: String, setting_id: String) -> String:
-	return str(_mod_settings.get(mod_id, {}).get(setting_id, ""))
-
-
-func getBool(mod_id: String, setting_id: String) -> bool:
-	return bool(_mod_settings.get(mod_id, {}).get(setting_id, false))
-
-
-func getColor(mod_id: String, setting_id: String) -> Color:
-	var hex: = getString(mod_id, setting_id)
+func get_float(mod_id: String, setting_id: String) -> float: return float(_mod_settings.get(mod_id, {}).get(setting_id, 0.0))
+func get_int(mod_id: String, setting_id: String) -> int: return int(_mod_settings.get(mod_id, {}).get(setting_id, 0))
+func get_string(mod_id: String, setting_id: String) -> String: return str(_mod_settings.get(mod_id, {}).get(setting_id, ""))
+func get_bool(mod_id: String, setting_id: String) -> bool: return bool(_mod_settings.get(mod_id, {}).get(setting_id, false))
+func get_color(mod_id: String, setting_id: String) -> Color:
+	var hex: = get_string(mod_id, setting_id)
 	return Color(hex) if Color.html_is_valid(hex) else Color.WHITE
 
+# Aliases (camelCase)
+func getFloat(mod_id: String, setting_id: String) -> float: return get_float(mod_id, setting_id)
+func getInt(mod_id: String, setting_id: String) -> int: return get_int(mod_id, setting_id)
+func getString(mod_id: String, setting_id: String) -> String: return get_string(mod_id, setting_id)
+func getBool(mod_id: String, setting_id: String) -> bool: return get_bool(mod_id, setting_id)
+func getColor(mod_id: String, setting_id: String) -> Color: return get_color(mod_id, setting_id)
 
 func get_mods_with_settings() -> Array:
 	var ids: = []
