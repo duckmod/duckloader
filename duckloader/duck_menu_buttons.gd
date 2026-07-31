@@ -32,7 +32,7 @@ func _inject_icon_button(root: Node) -> void :
 	icon_btn.offset_top = -84.0
 	icon_btn.offset_right = -20.0
 	icon_btn.offset_bottom = -20.0
-	icon_btn.pressed.connect(DuckLoader.open_mod_menu)
+	icon_btn.pressed.connect(DuckLoader.open_error_menu)
 	background.add_child(icon_btn)
 
 

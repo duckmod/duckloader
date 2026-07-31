@@ -450,6 +450,17 @@ func open_mod_menu() -> void :
 	)
 	get_tree().current_scene.add_child(menu)
 
+func open_error_menu() -> void:
+	var popup: = preload("res://duckloader/duck_mod_error.gd").new()
+	popup.ready.connect(func():
+		MenuManager.register_scaled_menu(popup.get_background())
+		MenuManager.open_menu(popup)
+		popup._add_error(
+			"TEST MOD (test_mod) has failed to load correctly",
+			"Parse error at line: 57"
+		)
+	)
+	get_tree().current_scene.add_child(popup)
 
 func _physics_process(delta: float) -> void :
 	for mod in _mods:
