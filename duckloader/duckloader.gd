@@ -162,7 +162,7 @@ func _read_metadata(meta_path: String, fallback_name: String, is_pck: bool) -> D
 		push_warning("[DuckLoader] '%s' has an invalid 'id', falling back to '%s'" % [meta_path, fallback_name])
 		meta.id = fallback_name
 
-	var raw_icon := meta.icon
+	var raw_icon = meta.icon
 
 	if typeof(raw_icon) != TYPE_STRING:
 		if raw_icon != null and str(raw_icon) != "":
