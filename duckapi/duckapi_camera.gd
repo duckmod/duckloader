@@ -36,3 +36,11 @@ func drop_object(force: bool = false):
 
 	if dropped_object:
 		object_dropped.emit(dropped_object)
+
+func update_equipped_item_properties():
+	if not equipped_item: return
+	if equipped_item.is_in_group("custom_tool"):
+		equipped_item.position = equipped_item.equipped_offset
+		equipped_item.rotation = equipped_item.equipped_rotation
+	else:
+		super.update_equipped_item_properties()

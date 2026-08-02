@@ -89,3 +89,6 @@ func initialize(loaded_resources: Dictionary) -> void:
 	super.initialize(event.get_value("loaded_resources"))
 
 	initialized.emit(event.get_value("loaded_resources"))
+
+func add_tool(pool_id: String, scene_path: String, properties: Dictionary):
+	pass
