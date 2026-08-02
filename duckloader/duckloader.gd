@@ -20,6 +20,7 @@ var _default_icon_texture: Texture2D = null
 func _ready() -> void:
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
 	ProjectSettings.set_setting("application/config/version", _game_version + " - (Duckloader " + loader_version + ")")
+	clean_shader_cache()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_mods_dir = OS.get_executable_path().get_base_dir().path_join("mods")
 	_hook_save_events()
@@ -503,3 +504,44 @@ func _fire_game_close() -> void:
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_on_game_close"):
 			mod._on_game_close()
+
+func clean_shader_cache(app_id: String = "4953030", max_age_days: int = 1):
+	log_message("start cleanup")
+	var exe_path = OS.get_executable_path()
+	
+	var steamapps_idx = exe_path.to_lower().find("steamapps")
+	
+	var cache_path = ""
+	
+	if steamapps_idx != -1:
+		var base_steamapps_path = exe_path.substr(0, steamapps_idx + 9)
+		cache_path = base_steamapps_path.path_join("shadercache").path_join(app_id).path_join("fozpipelinesv6")
+	else:
+		log_message("[DuckLoader] 'steamapps' not found in path. Using standard user cache.")
+		cache_path = "user://shader_cache"
+	
+	var dir = DirAccess.open(cache_path)
+	
+	if dir:
+		var current_time = Time.get_unix_time_from_system()
+		var max_age_seconds = max_age_days * 24 * 60 * 60
+		var deleted_count = 0
+		
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		
+		while file_name != "":
+			var file_time
+			if !dir.current_is_dir():
+				var full_file_path = cache_path + "/" + file_name
+				file_time = FileAccess.get_modified_time(full_file_path)
+				
+			if (current_time - file_time) > max_age_seconds:
+					dir.remove(file_name) 
+					deleted_count += 1
+					
+			file_name = dir.get_next()
+			
+		log_message("[DuckLoader] Cleared " + str(deleted_count) + " old shader files from: " + cache_path)
+	else:
+		log_message("[DuckLoader] Could not open shader cache directory at: " + cache_path)
