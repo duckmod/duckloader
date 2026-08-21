@@ -16,6 +16,9 @@ var _mod_settings: = {}
 var _close_fired: = false
 var _default_icon_texture: Texture2D = null
 
+var _keybind_pressed_state: = {}
+var _keybind_pressed_prev: = {}
+
 
 func _ready() -> void:
 	var _game_version = ProjectSettings.get_setting("application/config/version", "0.0.0")
@@ -452,9 +455,48 @@ func open_mod_menu() -> void :
 
 
 func _physics_process(delta: float) -> void :
+	_update_keybind_states()
+
 	for mod in _mods:
 		if is_instance_valid(mod) and mod.has_method("_mod_tick"):
 			mod._mod_tick(delta)
+
+
+func _update_keybind_states() -> void :
+	for mod_id in _mod_schemas.keys():
+		for entry in _mod_schemas[mod_id]:
+			if entry.type != "keybind":
+				continue
+
+			var key: = mod_id + ":" + entry.id
+			var keycode: = get_int(mod_id, entry.id)
+			var pressed: = keycode != 0 and Input.is_physical_key_pressed(keycode)
+
+			_keybind_pressed_prev[key] = _keybind_pressed_state.get(key, false)
+			_keybind_pressed_state[key] = pressed
+
+
+func get_keybind(mod_id: String, setting_id: String) -> int:
+	return get_int(mod_id, setting_id)
+
+
+func get_keybind_name(mod_id: String, setting_id: String) -> String:
+	var keycode: = get_keybind(mod_id, setting_id)
+	return OS.get_keycode_string(keycode) if keycode != 0 else "Unbound"
+
+
+func is_keybind_pressed(mod_id: String, setting_id: String) -> bool:
+	return _keybind_pressed_state.get(mod_id + ":" + setting_id, false)
+
+
+func is_keybind_just_pressed(mod_id: String, setting_id: String) -> bool:
+	var key: = mod_id + ":" + setting_id
+	return _keybind_pressed_state.get(key, false) and not _keybind_pressed_prev.get(key, false)
+
+
+func is_keybind_just_released(mod_id: String, setting_id: String) -> bool:
+	var key: = mod_id + ":" + setting_id
+	return _keybind_pressed_prev.get(key, false) and not _keybind_pressed_state.get(key, false)
 
 
 func _process(delta: float) -> void:
