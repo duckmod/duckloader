@@ -59,6 +59,28 @@ func _key_display_text(keycode: int) -> String:
 	return OS.get_keycode_string(keycode) if keycode != 0 else "Unbound"
 
 
+func _make_badge(is_release: bool) -> PanelContainer:
+	var badge: = PanelContainer.new()
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var style: = StyleBoxFlat.new()
+	style.bg_color = Color("#2ecc71") if is_release else Color("#e67e22")
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 2
+	style.content_margin_bottom = 2
+	style.set_corner_radius_all(4)
+	badge.add_theme_stylebox_override("panel", style)
+
+	var label: = Label.new()
+	label.text = "RELEASE" if is_release else "DEV"
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	badge.add_child(label)
+
+	return badge
+
+
 func _load_icon(mod_id: String) -> Texture2D:
 	if _icon_cache.has(mod_id):
 		return _icon_cache[mod_id]
@@ -195,7 +217,15 @@ func _populate_mod_list() -> void :
 		row.add_theme_color_override("font_hover_color", Color("#ffffff"))
 		row.add_theme_color_override("font_pressed_color", Color("#ffffff"))
 		row.add_theme_color_override("font_focus_color", Color("#ffffff"))
-		_mod_list_box.add_child(row)
+		var row_wrap: = HBoxContainer.new()
+		row_wrap.add_theme_constant_override("separation", 6)
+		row_wrap.add_child(row)
+
+		var badge: = _make_badge(bool(meta.get("pck_mod", false)))
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row_wrap.add_child(badge)
+
+		_mod_list_box.add_child(row_wrap)
 		_mod_buttons[mod_id] = row
 
 	await get_tree().create_timer(0.01).timeout
@@ -243,6 +273,10 @@ func _on_mod_selected(mod_id: String) -> void :
 	var version_label: = Label.new()
 	version_label.text = "v%s by %s" % [meta.get("version", "unknown"), meta.get("author", "unknown")]
 	name_box.add_child(version_label)
+
+	var detail_badge: = _make_badge(bool(meta.get("pck_mod", false)))
+	detail_badge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	name_box.add_child(detail_badge)
 
 	var save_btn: = Button.new()
 	save_btn.text = "Save"
