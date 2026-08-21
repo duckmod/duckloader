@@ -468,7 +468,7 @@ func _update_keybind_states() -> void :
 			if entry.type != "keybind":
 				continue
 
-			var key: = mod_id + ":" + entry.id
+			var key: String = mod_id + ":" + str(entry.id)
 			var keycode: = get_int(mod_id, entry.id)
 			var pressed: = keycode != 0 and Input.is_physical_key_pressed(keycode)
 
@@ -482,7 +482,12 @@ func get_keybind(mod_id: String, setting_id: String) -> int:
 
 func get_keybind_name(mod_id: String, setting_id: String) -> String:
 	var keycode: = get_keybind(mod_id, setting_id)
-	return OS.get_keycode_string(keycode) if keycode != 0 else "Unbound"
+
+	if keycode == 0:
+		return "Unbound"
+
+	var label: = DisplayServer.keyboard_get_label_from_physical(keycode)
+	return OS.get_keycode_string(label if label != KEY_NONE else keycode)
 
 
 func is_keybind_pressed(mod_id: String, setting_id: String) -> bool:
