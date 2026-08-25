@@ -1,0 +1,74 @@
+name: Bug report
+description: Report a problem with DuckLoader or a bundled mod
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load mod X
+        2. Press key Y
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: loader-version
+    attributes:
+      label: DuckLoader version
+      description: Shown in the game version string / mod menu.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+
+  - type: input
+    id: game-version
+    attributes:
+      label: Game version
+    validations:
+      required: false
+
+  - type: textarea
+    id: mods
+    attributes:
+      label: Installed mods
+      description: List the mods in your `mods/` folder (name + version).
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - Linux
+        - Steam Deck
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste any errors from the console or Godot log (`user://logs/godot.log`).
+      render: shell
+    validations:
+      required: false
