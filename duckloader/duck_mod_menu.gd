@@ -56,7 +56,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _key_display_text(keycode: int) -> String:
-	return OS.get_keycode_string(keycode) if keycode != 0 else "Unbound"
+	if keycode == 0:
+		return "Unbound"
+
+	var label: = DisplayServer.keyboard_get_label_from_physical(keycode)
+	return OS.get_keycode_string(label if label != KEY_NONE else keycode)
 
 
 func _load_icon(mod_id: String) -> Texture2D:
@@ -70,16 +74,15 @@ func _load_icon(mod_id: String) -> Texture2D:
 
 	var tex: Texture2D = null
 
-	if path.begins_with("res://"):
-		if ResourceLoader.exists(path):
-			var loaded_res = load(path)
-			if loaded_res is Texture2D:
-				tex = loaded_res
-			elif loaded_res is Image:
-				loaded_res.resize(64, 64)
-				tex = ImageTexture.create_from_image(loaded_res)
+	if path.begins_with("res://") and ResourceLoader.exists(path):
+		var loaded_res = load(path)
+		if loaded_res is Texture2D:
+			tex = loaded_res
+		elif loaded_res is Image:
+			loaded_res.resize(64, 64)
+			tex = ImageTexture.create_from_image(loaded_res)
 
-	else:
+	if not tex:
 		var img: = Image.new()
 		if img.load(path) == OK:
 			img.resize(64, 64)
