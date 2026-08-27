@@ -9,14 +9,15 @@ signal before_load(event)
 signal game_loaded(success: bool)
 
 
-func save_game() -> bool:
+func save_game(force: bool = false) -> bool:
 	var event: = HookEvent.new()
+	event.data = {"force": force}
 	before_save.emit(event)
 
 	if event.cancelled:
 		return false
 
-	var result: = super.save_game()
+	var result: = super.save_game(event.get_value("force"))
 	game_saved.emit(result)
 	return result
 
