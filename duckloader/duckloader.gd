@@ -552,7 +552,7 @@ func _fire_game_close() -> void:
 		if is_instance_valid(mod) and mod.has_method("_on_game_close"):
 			mod._on_game_close()
 
-func clean_shader_cache(app_id: String = "4953030", max_age_days: int = 1):
+func clean_shader_cache(app_id: String = "4026250", max_age_days: int = 1):
 	log_message("start cleanup")
 	var exe_path = OS.get_executable_path()
 	
